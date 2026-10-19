@@ -15,6 +15,14 @@ export function isScheduled(h: Habit, day: Date): boolean {
   return h.weekdays.includes(day.getDay()) && toKey(day) >= h.createdAt;
 }
 
+/**
+ * Hábitos que se muestran para marcar un día: los que tienen programado ese día de la semana,
+ * aunque ese día sea anterior a su inicio (al marcarlo, el inicio se mueve a ese día; ver store).
+ */
+export function habitsForDay(habits: Habit[], day: Date): Habit[] {
+  return habits.filter((h) => h.weekdays.includes(day.getDay()));
+}
+
 export function isDone(checks: Checks, habitId: string, day: Date): boolean {
   return (checks[toKey(day)] ?? []).includes(habitId);
 }

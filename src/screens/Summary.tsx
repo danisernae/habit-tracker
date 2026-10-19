@@ -1,9 +1,9 @@
-import { useState, type CSSProperties } from 'react';
+import { useRef, useState, type ChangeEvent, type CSSProperties } from 'react';
 import { MonthArrows } from '../components/Common';
-import { addMonths, isFuture, monthDays, monthKey, monthName, startOfMonth } from '../lib/dates';
+import { addMonths, isFuture, monthDays, monthKey, monthName, startOfMonth, toKey } from '../lib/dates';
 import { colorHex, colorInk } from '../lib/palette';
 import { isDone, MOODS, monthSummary, verdict } from '../lib/stats';
-import { useStore } from '../store';
+import { parseData, useStore } from '../store';
 
 /** Evaluación del mes. Abre en el mes anterior (el que ya terminó) si hay hábitos desde entonces. */
 export function Summary() {
@@ -152,6 +152,76 @@ export function Summary() {
           onChange={(e) => setReflection(key, { note: e.target.value })}
         />
       </section>
+
+      <Backup />
     </main>
+  );
+}
+
+/** Descargar los datos en un archivo y cargarlos de nuevo (por ejemplo, en otro celular). */
+function Backup() {
+  const { data, replaceData } = useStore();
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [status, setStatus] = useState('');
+
+  async function onExport() {
+    const name = `habit-tracker-respaldo-${toKey(new Date())}.json`;
+    const file = new File([JSON.stringify(data, null, 2)], name, { type: 'application/json' });
+    // En el celular se abre el menú de compartir (Guardar en Archivos, enviarlo por WhatsApp…).
+    const touch = window.matchMedia('(pointer: coarse)').matches;
+    if (touch && navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: 'Respaldo de Habit Tracker' });
+        setStatus('Respaldo listo.');
+      } catch {
+        /* se cerró el menú de compartir */
+      }
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setStatus('Respaldo descargado.');
+  }
+
+  async function onImport(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    const next = parseData(await file.text());
+    if (!next) {
+      setStatus('Ese archivo no es un respaldo de Habit Tracker.');
+      return;
+    }
+    if (window.confirm('¿Cargar este respaldo? Reemplaza los hábitos y marcas que tienes ahora en este dispositivo.')) {
+      replaceData(next);
+      setStatus(`Respaldo cargado: ${next.habits.length} hábitos.`);
+    }
+  }
+
+  return (
+    <section className="stack-10">
+      <h2>Tus datos</h2>
+      <p className="muted small">
+        Se guardan solo en este dispositivo. Descarga un respaldo de vez en cuando para no perderlos.
+      </p>
+      <div className="grid-2">
+        <button type="button" className="secondary-btn" onClick={onExport}>
+          Descargar respaldo
+        </button>
+        <button type="button" className="secondary-btn" onClick={() => fileInput.current?.click()}>
+          Cargar respaldo
+        </button>
+      </div>
+      <input ref={fileInput} type="file" accept="application/json,.json" hidden onChange={onImport} />
+      {status && (
+        <p className="muted small" role="status">
+          {status}
+        </p>
+      )}
+    </section>
   );
 }

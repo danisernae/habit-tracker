@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { MonthArrows, StatTile } from '../components/Common';
-import { addMonths, isFuture, leadingBlanks, monthDays, monthName, sameDay, startOfMonth, WEEK_LETTERS } from '../lib/dates';
+import { addMonths, isFuture, leadingBlanks, longDate, monthDays, monthName, sameDay, startOfMonth, toKey, WEEK_LETTERS } from '../lib/dates';
 import { COLOR_KEYS, colorHex, colorInk } from '../lib/palette';
 import { currentStreak, isDone, isScheduled, monthSummary } from '../lib/stats';
 import { useStore } from '../store';
@@ -77,8 +77,8 @@ export function Month() {
                 : selected && !future
                   ? { color: 'var(--muted)' }
                   : undefined;
-            return (
-              <div key={day.getDate()} className={cls} style={style}>
+            const content = (
+              <>
                 <span className="cal-num">{day.getDate()}</span>
                 {!future && !selected && (
                   <span className="cal-dots" aria-hidden="true">
@@ -93,7 +93,22 @@ export function Month() {
                       ))}
                   </span>
                 )}
+              </>
+            );
+            return future ? (
+              <div key={day.getDate()} className={cls} style={style}>
+                {content}
               </div>
+            ) : (
+              <a
+                key={day.getDate()}
+                href={isToday ? '#/hoy' : `#/hoy/${toKey(day)}`}
+                className={cls}
+                style={style}
+                aria-label={`Marcar ${longDate(day)}`}
+              >
+                {content}
+              </a>
             );
           })}
         </div>

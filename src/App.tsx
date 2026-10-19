@@ -5,7 +5,7 @@ import { Month } from './screens/Month';
 import { Summary } from './screens/Summary';
 import { Today } from './screens/Today';
 
-/** Rutas con # para que funcione en cualquier hosting estático: #/hoy, #/mes, #/resumen, #/nuevo, #/editar/:id */
+/** Rutas con # para que funcione en cualquier hosting estático: #/hoy, #/hoy/AAAA-MM-DD, #/mes, #/resumen, #/nuevo, #/editar/:id */
 function useHash(): string {
   const [hash, setHash] = useState(() => window.location.hash);
   useEffect(() => {
@@ -29,7 +29,7 @@ export function App() {
   const route: Route = section === 'mes' || section === 'resumen' ? section : 'hoy';
   return (
     <>
-      {route === 'hoy' && <Today />}
+      {route === 'hoy' && <Today key={param ?? 'hoy'} dayKey={param} />}
       {route === 'mes' && <Month />}
       {route === 'resumen' && <Summary />}
       <BottomNav current={route} />

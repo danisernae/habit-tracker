@@ -31,13 +31,27 @@ function defaultData(): AppData {
   };
 }
 
+/** Lee datos guardados o de un respaldo. Devuelve null si el texto no es un respaldo válido. */
+export function parseData(raw: string): AppData | null {
+  try {
+    const parsed = JSON.parse(raw) as AppData;
+    const ok =
+      parsed &&
+      parsed.version === 1 &&
+      Array.isArray(parsed.habits) &&
+      typeof parsed.checks === 'object' &&
+      typeof parsed.reflections === 'object';
+    return ok ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 function load(): AppData {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as AppData;
-      if (parsed && parsed.version === 1 && Array.isArray(parsed.habits)) return parsed;
-    }
+    const parsed = raw ? parseData(raw) : null;
+    if (parsed) return parsed;
   } catch {
     /* almacenamiento no disponible: se empieza de cero */
   }
@@ -57,6 +71,7 @@ interface Store {
   saveHabit: (habit: Habit) => void;
   deleteHabit: (habitId: string) => void;
   setReflection: (month: string, patch: Partial<Reflection>) => void;
+  replaceData: (data: AppData) => void;
 }
 
 const StoreContext = createContext<Store | null>(null);
@@ -81,8 +96,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const key = toKey(day);
         setData((d) => {
           const current = d.checks[key] ?? [];
-          const next = current.includes(habitId) ? current.filter((id) => id !== habitId) : [...current, habitId];
-          return { ...d, checks: { ...d.checks, [key]: next } };
+          const marking = !current.includes(habitId);
+          const next = marking ? [...current, habitId] : current.filter((id) => id !== habitId);
+          // Marcar un día anterior al inicio del hábito mueve su inicio a ese día.
+          const habits = marking
+            ? d.habits.map((h) => (h.id === habitId && key < h.createdAt ? { ...h, createdAt: key } : h))
+            : d.habits;
+          return { ...d, habits, checks: { ...d.checks, [key]: next } };
         });
       },
       saveHabit(habit) {
@@ -106,6 +126,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           const prev = d.reflections[month] ?? { mood: -1, note: '' };
           return { ...d, reflections: { ...d.reflections, [month]: { ...prev, ...patch } } };
         });
+      },
+      replaceData(next) {
+        setData(next);
       },
     };
   }, [data]);

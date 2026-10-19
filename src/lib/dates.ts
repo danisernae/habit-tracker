@@ -13,6 +13,13 @@ export function fromKey(key: DateKey): Date {
   return new Date(y, m - 1, d);
 }
 
+/** Igual que `fromKey`, pero devuelve null si el texto no es una fecha 'AAAA-MM-DD' real. */
+export function parseKey(key: string | undefined): Date | null {
+  if (!key || !/^\d{4}-\d{2}-\d{2}$/.test(key)) return null;
+  const d = fromKey(key);
+  return toKey(d) === key ? d : null;
+}
+
 export function addDays(d: Date, n: number): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
 }
@@ -66,6 +73,13 @@ export function sameDay(a: Date, b: Date): boolean {
 /** "domingo, 18 de octubre" */
 export function longDate(d: Date): string {
   return new Intl.DateTimeFormat('es-CO', { weekday: 'long', day: 'numeric', month: 'long' }).format(d);
+}
+
+/** "Hoy", "Ayer" o el día de la semana: "Jueves" */
+export function dayTitle(d: Date, today: Date): string {
+  if (sameDay(d, today)) return 'Hoy';
+  if (sameDay(d, addDays(today, -1))) return 'Ayer';
+  return WEEK_NAMES[(d.getDay() + 6) % 7];
 }
 
 /** "Octubre" */

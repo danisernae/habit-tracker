@@ -1,32 +1,36 @@
 import type { CSSProperties } from 'react';
 import { Icon } from '../components/Icon';
 import { ProgressRing } from '../components/Common';
-import { longDate, sameDay, isFuture, weekDays, WEEK_LETTERS } from '../lib/dates';
+import { dayTitle, isFuture, longDate, parseKey, sameDay, toKey, weekDays, WEEK_LETTERS, WEEK_NAMES } from '../lib/dates';
 import { colorHex, colorInk } from '../lib/palette';
-import { currentStreak, dayMessage, isDone, isScheduled } from '../lib/stats';
+import { currentStreak, dayMessage, habitsForDay, isDone, isScheduled } from '../lib/stats';
 import type { Habit } from '../lib/types';
 import { useStore } from '../store';
 
-export function Today() {
+/** Marcar los hábitos de un día: hoy (#/hoy) o un día pasado (#/hoy/AAAA-MM-DD). */
+export function Today({ dayKey }: { dayKey?: string }) {
   const { habits, data, toggleCheck } = useStore();
   const today = new Date();
-  const todays = habits.filter((h) => isScheduled(h, today));
-  const done = todays.filter((h) => isDone(data.checks, h.id, today)).length;
+  const parsed = parseKey(dayKey);
+  const day = parsed && !isFuture(parsed, today) ? parsed : today;
+  const isToday = sameDay(day, today);
+  const todays = habitsForDay(habits, day);
+  const done = todays.filter((h) => isDone(data.checks, h.id, day)).length;
   const pct = todays.length ? Math.round((done / todays.length) * 100) : 0;
 
   return (
     <main className="screen">
       <header className="screen-header">
         <div>
-          <p className="eyebrow">{longDate(today)}</p>
-          <h1 className="title">Hoy</h1>
+          <p className="eyebrow">{longDate(day)}</p>
+          <h1 className="title">{dayTitle(day, today)}</h1>
         </div>
         <a href="#/nuevo" className="round-btn dark" aria-label="Nuevo hábito">
           <Icon name="plus" size={20} strokeWidth={2.4} />
         </a>
       </header>
 
-      <section className="card progress-card" aria-label={`Progreso de hoy: ${pct}%`}>
+      <section className="card progress-card" aria-label={`Progreso del día: ${pct}%`}>
         <ProgressRing pct={pct} />
         <div>
           <p className="progress-msg">{dayMessage(done, todays.length)}</p>
@@ -36,16 +40,23 @@ export function Today() {
         </div>
       </section>
 
-      <WeekStrip habits={habits} today={today} />
+      <WeekStrip habits={habits} day={day} today={today} />
 
       <div className="section-head">
         <h2>Mis hábitos</h2>
-        <span className="muted small">Toca para marcar</span>
+        {isToday ? (
+          <span className="muted small">Toca para marcar</span>
+        ) : (
+          <a href="#/hoy" className="small link">
+            Volver a hoy
+          </a>
+        )}
       </div>
 
       {todays.length === 0 ? (
         <p className="empty">
-          Hoy no tienes hábitos programados. <a href="#/nuevo">Crea uno</a>.
+          {isToday ? 'Hoy no tienes hábitos programados.' : `No tienes hábitos programados los ${WEEK_NAMES[(day.getDay() + 6) % 7].toLowerCase()}.`}{' '}
+          <a href="#/nuevo">Crea uno</a>.
         </p>
       ) : (
         <ul className="habit-list">
@@ -53,9 +64,9 @@ export function Today() {
             <HabitRow
               key={h.id}
               habit={h}
-              done={isDone(data.checks, h.id, today)}
+              done={isDone(data.checks, h.id, day)}
               streak={currentStreak(h, data.checks, today)}
-              onToggle={() => toggleCheck(h.id, today)}
+              onToggle={() => toggleCheck(h.id, day)}
             />
           ))}
         </ul>
@@ -93,15 +104,18 @@ function HabitRow({ habit, done, streak, onToggle }: { habit: Habit; done: boole
   );
 }
 
-function WeekStrip({ habits, today }: { habits: Habit[]; today: Date }) {
+/** La semana del día elegido. Cada día pasado es un enlace para marcarlo; el elegido va en oscuro. */
+function WeekStrip({ habits, day: selectedDay, today }: { habits: Habit[]; day: Date; today: Date }) {
   const { data } = useStore();
   return (
     <div className="week-strip">
-      {weekDays(today).map((day, i) => {
+      {weekDays(selectedDay).map((day, i) => {
+        const selected = sameDay(day, selectedDay);
         const isToday = sameDay(day, today);
         const future = isFuture(day, today);
-        return (
-          <div key={i} className={`week-day${isToday ? ' today' : ''}`}>
+        const cls = `week-day${selected ? ' selected' : ''}${isToday ? ' today' : ''}${future ? ' future' : ''}`;
+        const content = (
+          <>
             <span className="week-letter">{WEEK_LETTERS[i]}</span>
             <span className="week-num">{day.getDate()}</span>
             <span className="week-dots" aria-hidden="true">
@@ -115,7 +129,22 @@ function WeekStrip({ habits, today }: { habits: Habit[]; today: Date }) {
                   />
                 ))}
             </span>
+          </>
+        );
+        return future ? (
+          <div key={i} className={cls}>
+            {content}
           </div>
+        ) : (
+          <a
+            key={i}
+            href={isToday ? '#/hoy' : `#/hoy/${toKey(day)}`}
+            className={cls}
+            aria-label={`${WEEK_NAMES[i]} ${day.getDate()}`}
+            aria-current={selected ? 'date' : undefined}
+          >
+            {content}
+          </a>
         );
       })}
     </div>

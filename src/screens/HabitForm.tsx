@@ -14,6 +14,8 @@ export function HabitForm({ habitId }: { habitId?: string }) {
   const [detail, setDetail] = useState(editing?.detail ?? '');
   const [color, setColor] = useState<HabitColor>(editing?.color ?? 'lila');
   const [icon, setIcon] = useState<HabitIcon>(editing?.icon ?? 'lectura');
+  const todayKey = toKey(new Date());
+  const [start, setStart] = useState(editing?.createdAt ?? todayKey);
   const [days, setDays] = useState<boolean[]>(() =>
     WEEK_TO_GETDAY.map((d) => (editing ? editing.weekdays.includes(d) : true)),
   );
@@ -36,7 +38,7 @@ export function HabitForm({ habitId }: { habitId?: string }) {
       color,
       icon,
       weekdays: WEEK_TO_GETDAY.filter((_, i) => days[i]),
-      createdAt: editing?.createdAt ?? toKey(new Date()),
+      createdAt: start && start <= todayKey ? start : todayKey,
       order: editing?.order ?? Math.max(-1, ...habits.map((h) => h.order)) + 1,
     };
     saveHabit(habit);
@@ -138,6 +140,21 @@ export function HabitForm({ habitId }: { habitId?: string }) {
             ))}
           </div>
         </fieldset>
+
+        <div className="stack-8">
+          <label htmlFor="inicio" className="field-label">
+            ¿Desde cuándo?
+          </label>
+          <input
+            id="inicio"
+            type="date"
+            className="input"
+            value={start}
+            max={todayKey}
+            onChange={(e) => setStart(e.target.value)}
+          />
+          <p className="muted xsmall">Los días antes de esta fecha no cuentan en tu porcentaje.</p>
+        </div>
 
         <button type="submit" className="primary-btn" disabled={!canSave}>
           Guardar hábito

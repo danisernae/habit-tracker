@@ -1,0 +1,13 @@
+{
+  "name": "Habit Tracker",
+  "short_name": "Habit Tracker",
+  "description": "Registra tus hábitos cada día y evalúa cómo te fue en el mes.",
+  "lang": "es",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FBF7F2",
+  "theme_color": "#FBF7F2",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

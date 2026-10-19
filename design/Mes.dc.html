@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Hábitos — Mes</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&amp;family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#BC3157}a:hover{color:#8E2242}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #FBF7F2; color: #3B1424; font-family: 'DM Sans', system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden">
+  <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 16px; padding: 22px 20px 12px">
+
+    <div style="display: flex; justify-content: space-between; align-items: flex-end">
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <div style="font-size: 13px; font-weight: 500; color: #7A5A66; text-transform: uppercase; letter-spacing: 0.08em">Tu calendario</div>
+        <h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 34px; line-height: 1.05; letter-spacing: -0.02em">Octubre</h1>
+      </div>
+      <div style="display: flex; gap: 6px">
+        <button aria-label="Mes anterior" style="width: 44px; height: 44px; border-radius: 22px; border: 1.5px solid #EFE6E1; background: #FFFFFF; color: #3B1424; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0">
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+        </button>
+        <button aria-label="Mes siguiente" style="width: 44px; height: 44px; border-radius: 22px; border: 1.5px solid #EFE6E1; background: #FFFFFF; color: #3B1424; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0">
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div role="group" aria-label="Filtrar por hábito" style="display: flex; flex-wrap: wrap; gap: 6px">
+      <sc-for list="{{chips}}" as="c" hint-placeholder-count="6">
+        <button onClick="{{c.pick}}" aria-pressed="{{c.pressed}}" style="display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px; border-radius: 18px; font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; {{c.style}}">
+          <span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 5px; {{c.dotStyle}}"></span>
+          {{c.label}}
+        </button>
+      </sc-for>
+    </div>
+
+    <div style="background: #FFFFFF; border: 1.5px solid #EFE6E1; border-radius: 24px; padding: 14px 12px 12px; display: flex; flex-direction: column; gap: 8px">
+      <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; font-size: 11px; font-weight: 700; color: #7A5A66; text-align: center">
+        <div>L</div><div>M</div><div>M</div><div>J</div><div>V</div><div>S</div><div>D</div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px">
+        <sc-for list="{{cells}}" as="cell" hint-placeholder-count="35">
+          <div style="height: 50px; border-radius: 14px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; {{cell.style}}">
+            <div style="font-size: 14px; font-weight: 700; line-height: 1">{{cell.num}}</div>
+            <sc-if value="{{cell.showDots}}" hint-placeholder-val="{{true}}">
+              <div style="display: grid; grid-template-columns: repeat(3, 6px); gap: 2px; justify-content: center">
+                <sc-for list="{{cell.dots}}" as="dot" hint-placeholder-count="5">
+                  <div style="width: 6px; height: 6px; border-radius: 3px; {{dot.style}}"></div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+      <div style="background: #FFFFFF; border: 1.5px solid #EFE6E1; border-radius: 20px; padding: 14px 16px; display: flex; flex-direction: column; gap: 2px">
+        <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 28px; line-height: 1.05">{{statA}}</div>
+        <div style="font-size: 13px; color: #7A5A66">{{statALabel}}</div>
+      </div>
+      <div style="background: #FFFFFF; border: 1.5px solid #EFE6E1; border-radius: 20px; padding: 14px 16px; display: flex; flex-direction: column; gap: 2px">
+        <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 28px; line-height: 1.05">{{statB}}</div>
+        <div style="font-size: 13px; color: #7A5A66">{{statBLabel}}</div>
+      </div>
+    </div>
+  </div>
+
+  <nav aria-label="Navegación" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 8px 16px 22px; background: #FFFFFF; border-top: 1.5px solid #EFE6E1">
+    <a href="Main.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 0; text-decoration: none; color: #7A5A66; font-size: 12px; font-weight: 500">
+      <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg>
+      Hoy
+    </a>
+    <a href="Mes.dc.html" aria-current="page" style="display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 0; text-decoration: none; color: #BC3157; font-size: 12px; font-weight: 700">
+      <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
+      Mes
+    </a>
+    <a href="Resumen.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 0; text-decoration: none; color: #7A5A66; font-size: 12px; font-weight: 500">
+      <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 20V11M12 20V5M19 20v-6"/></svg>
+      Resumen
+    </a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+var HABITS = [
+  { id: 'agua', name: 'Agua', color: '#A9CCEA', lightText: false },
+  { id: 'ejercicio', name: 'Ejercicio', color: '#BC3157', lightText: true },
+  { id: 'dieta', name: 'Dieta', color: '#EAD6AE', lightText: false },
+  { id: 'azucar', name: 'Sin azúcar', color: '#EBB6C9', lightText: false },
+  { id: 'skin', name: 'Skin care', color: '#C6B5E2', lightText: false }
+];
+var RATE = [8, 6, 7, 5, 9];
+function hit(h, d, m) {
+  var x = (d * 7 + h * 13 + ((d * (h + 3)) % 5) + m * 3) % 10;
+  return x < RATE[h];
+}
+var TODAY = 18, DAYS = 31, OFFSET = 3; // octubre 2026 empieza en jueves
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { filter: -1 };
+  }
+  renderVals() {
+    var self = this;
+    var f = this.state.filter;
+
+    var chips = [{ label: 'Todos', idx: -1, color: null }].concat(HABITS.map(function (h, i) { return { label: h.name, idx: i, color: h.color }; }))
+      .map(function (c) {
+        var on = c.idx === f;
+        return {
+          label: c.label, pressed: on ? 'true' : 'false',
+          style: on ? 'background:#3B1424;color:#FFFFFF;border:1.5px solid #3B1424' : 'background:#FFFFFF;color:#3B1424;border:1.5px solid #EFE6E1',
+          dotStyle: c.color ? 'background:' + c.color : 'background:conic-gradient(#A9CCEA 0 20%,#BC3157 0 40%,#EAD6AE 0 60%,#EBB6C9 0 80%,#C6B5E2 0)',
+          pick: function () { self.setState({ filter: c.idx }); }
+        };
+      });
+
+    var cells = [];
+    for (var b = 0; b < OFFSET; b++) cells.push({ num: '', showDots: false, dots: [], style: 'background:transparent' });
+    var perfect = 0, totalHits = 0, habitHits = 0, streak = 0, best = 0, run = 0;
+    for (var d = 1; d <= DAYS; d++) {
+      var past = d <= TODAY;
+      var hits = HABITS.map(function (_, i) { return past && hit(i, d, 10); });
+      var n = hits.filter(Boolean).length;
+      if (past) { totalHits += n; if (n === 5) perfect++; }
+      var style, showDots = false, dots = [];
+      if (!past) {
+        style = 'background:transparent;color:#B9A6AD;border:1.5px dashed #EFE6E1';
+      } else if (f === -1) {
+        showDots = true;
+        dots = HABITS.map(function (h, i) { return { style: hits[i] ? 'background:' + h.color : 'background:#EFE6E1' }; });
+        style = d === TODAY ? 'background:#FBF7F2;color:#3B1424;border:2px solid #3B1424' : 'background:#FBF7F2;color:#3B1424';
+      } else {
+        var h = HABITS[f];
+        if (hits[f]) { habitHits++; run++; best = Math.max(best, run); } else { run = 0; }
+        style = hits[f]
+          ? 'background:' + h.color + ';color:' + (h.lightText ? '#FFFFFF' : '#3B1424')
+          : 'background:#FBF7F2;color:#7A5A66';
+        if (d === TODAY) style += ';border:2px solid #3B1424';
+      }
+      cells.push({ num: d, showDots: showDots, dots: dots, style: style });
+    }
+    if (f !== -1) {
+      for (var k = TODAY; k >= 1 && hit(f, k, 10); k--) streak++;
+    }
+
+    var vals = { chips: chips, cells: cells };
+    if (f === -1) {
+      vals.statA = Math.round(totalHits / (TODAY * 5) * 100) + '%';
+      vals.statALabel = 'de cumplimiento en octubre';
+      vals.statB = perfect;
+      vals.statBLabel = perfect === 1 ? 'día perfecto (5 de 5)' : 'días perfectos (5 de 5)';
+    } else {
+      vals.statA = habitHits + '/' + TODAY;
+      vals.statALabel = 'días cumplidos';
+      vals.statB = streak + ' días';
+      vals.statBLabel = 'racha actual · mejor ' + best;
+    }
+    return vals;
+  }
+}
+</script>
+</body>
+</html>

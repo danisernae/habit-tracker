@@ -77,7 +77,7 @@ export const DEFAULT_SETTINGS: NutritionSettings = {
     desayuno: row({ lacteos: 2, harinas: 1, grasas: 1, agua: 1 }),
     mediaManana: row({ lacteos: 1, frutas: 1, agua: 2 }),
     almuerzo: row({ proteinas: 1, harinas: 2, grasas: 2, verduras: 1, agua: 2 }),
-    mediaTarde: row({ lacteos: 1, frutas: 1, dulce: 1, agua: 2 }),
+    mediaTarde: row({ lacteos: 1, dulce: 1, agua: 2 }),
     cena: row({ proteinas: 1, harinas: 1, grasas: 1, verduras: 1, agua: 1 }),
   },
   values: {

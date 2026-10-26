@@ -48,6 +48,7 @@ legend { padding: 0; }
 .muted { color: var(--muted); }
 .small { font-size: 13px; }
 .xsmall { font-size: 12px; }
+.stack-4 { display: flex; flex-direction: column; gap: 4px; }
 .stack-8 { display: flex; flex-direction: column; gap: 8px; }
 .stack-10 { display: flex; flex-direction: column; gap: 10px; }
 .stack-18 { display: flex; flex-direction: column; gap: 18px; }
@@ -90,6 +91,7 @@ legend { padding: 0; }
   border: 1.5px solid var(--border); padding: 0; text-decoration: none;
 }
 .round-btn.dark { background: var(--ink); color: #fff; border-color: var(--ink); }
+.round-btn.disabled { color: var(--future); }
 
 /* ===== Hoy ===== */
 .progress-card { display: flex; align-items: center; gap: 18px; padding: 16px 18px; }
@@ -279,10 +281,73 @@ input[type='date'].input { -webkit-appearance: none; appearance: none; display: 
   border: 1.5px solid var(--border); color: var(--accent); font-weight: 700;
 }
 
+/* ===== Nutrición ===== */
+.tabs {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px;
+  background: var(--track); border-radius: 22px;
+}
+.tabs a {
+  min-height: 40px; border-radius: 18px; display: flex; align-items: center; justify-content: center;
+  color: var(--muted); font-weight: 700; font-size: 14px; text-decoration: none;
+}
+.tabs a[aria-current='page'] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(59, 20, 36, 0.08); }
+
+.food-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.food-card {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 12px 12px 10px; border-radius: var(--radius-card);
+  background: var(--surface); border: 1.5px solid var(--border);
+}
+.food-card.full { border-color: var(--c); }
+.food-count {
+  width: 44px; height: 44px; border-radius: 15px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--c); color: var(--fg);
+  font-family: var(--font-display); font-weight: 800; font-size: 20px;
+}
+.pips { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 2px; }
+.pips > span { width: 14px; height: 6px; border-radius: 3px; background: var(--track); }
+.pips > span.on { background: var(--c); }
+.pips > span.extra { background: var(--accent); }
+
+.eaten-meal { padding: 10px 0 2px; }
+.eaten { list-style: none; margin: 0; padding: 0 0 6px; }
+.eaten li { min-height: 44px; }
+.eaten li + li { border-top: 1.5px solid var(--track); }
+.icon-only {
+  width: 44px; height: 44px; flex-shrink: 0; padding: 0; border: 0; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent; color: var(--muted);
+}
+
+.sheet {
+  width: min(100%, 480px); max-width: 480px; max-height: 85vh;
+  margin: auto auto 0; padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
+  border: 0; border-radius: 28px 28px 0 0; background: var(--bg); color: var(--ink);
+}
+.sheet::backdrop { background: rgba(59, 20, 36, 0.35); }
+.equiv-list { display: flex; flex-direction: column; gap: 6px; }
+.equiv-btn {
+  min-height: 48px; padding: 10px 14px; border-radius: 16px; text-align: left;
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface); border: 1.5px solid var(--border); font-weight: 500;
+}
+.equiv-btn:active { border-color: var(--c); }
+.add-other { padding: 0 18px; flex-shrink: 0; }
+.secondary-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.form-card { padding: 16px; }
+.history { list-style: none; margin: 0; }
+.history li + li { border-top: 1.5px solid var(--track); }
+.history-main {
+  flex: 1; min-width: 0; min-height: 56px; padding: 8px 0; border: 0; background: transparent; text-align: left;
+  display: flex; flex-direction: column; justify-content: center; gap: 2px;
+}
+
 /* ===== Barra inferior ===== */
 .bottom-nav {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
-  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
   padding: 8px max(16px, calc(50% - 224px)) calc(14px + env(safe-area-inset-bottom));
   background: var(--surface); border-top: 1.5px solid var(--border);
 }

@@ -3,6 +3,7 @@ import { MonthArrows } from '../components/Common';
 import { addMonths, isFuture, monthDays, monthKey, monthName, startOfMonth, toKey } from '../lib/dates';
 import { colorHex, colorInk } from '../lib/palette';
 import { isDone, MOODS, monthSummary, verdict } from '../lib/stats';
+import { parseNutrition, useNutrition } from '../nutrition';
 import { parseData, useStore } from '../store';
 
 /** Evaluación del mes. Abre en el mes anterior (el que ya terminó) si hay hábitos desde entonces. */
@@ -161,12 +162,13 @@ export function Summary() {
 /** Descargar los datos en un archivo y cargarlos de nuevo (por ejemplo, en otro celular). */
 function Backup() {
   const { data, replaceData } = useStore();
+  const { nutrition, replaceNutrition } = useNutrition();
   const fileInput = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState('');
 
   async function onExport() {
     const name = `habit-tracker-respaldo-${toKey(new Date())}.json`;
-    const file = new File([JSON.stringify(data, null, 2)], name, { type: 'application/json' });
+    const file = new File([JSON.stringify({ ...data, nutricion: nutrition }, null, 2)], name, { type: 'application/json' });
     // En el celular se abre el menú de compartir (Guardar en Archivos, enviarlo por WhatsApp…).
     const touch = window.matchMedia('(pointer: coarse)').matches;
     if (touch && navigator.canShare?.({ files: [file] })) {
@@ -191,13 +193,17 @@ function Backup() {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    const next = parseData(await file.text());
+    const text = await file.text();
+    const next = parseData(text);
     if (!next) {
       setStatus('Ese archivo no es un respaldo de Habit Tracker.');
       return;
     }
-    if (window.confirm('¿Cargar este respaldo? Reemplaza los hábitos y marcas que tienes ahora en este dispositivo.')) {
+    // Los respaldos anteriores a Nutrición no traen `nutricion`: en ese caso se deja lo que hay.
+    const nextNutrition = parseNutrition((JSON.parse(text) as { nutricion?: unknown }).nutricion);
+    if (window.confirm('¿Cargar este respaldo? Reemplaza los hábitos, marcas y datos de nutrición que tienes ahora en este dispositivo.')) {
       replaceData(next);
+      if (nextNutrition) replaceNutrition(nextNutrition);
       setStatus(`Respaldo cargado: ${next.habits.length} hábitos.`);
     }
   }

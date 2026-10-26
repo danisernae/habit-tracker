@@ -2,7 +2,7 @@ import type { ReactElement } from 'react';
 import type { HabitIcon } from '../lib/palette';
 
 /** Íconos de trazo (los mismos del diseño). Decorativos: el texto al lado ya dice qué son. */
-const PATHS: Record<HabitIcon | 'plus' | 'check' | 'left' | 'right' | 'sun' | 'calendar' | 'chart', ReactElement> = {
+const PATHS: Record<HabitIcon | 'plus' | 'check' | 'left' | 'right' | 'sun' | 'calendar' | 'chart' | 'plate' | 'minus' | 'close', ReactElement> = {
   agua: <path d="M12 3c-3.5 4.5-6 7.8-6 11a6 6 0 0 0 12 0c0-3.2-2.5-6.5-6-11z" />,
   ejercicio: <path d="M6.5 7v10M3.5 9.5v5M17.5 7v10M20.5 9.5v5M6.5 12h11" />,
   dieta: (
@@ -46,6 +46,15 @@ const PATHS: Record<HabitIcon | 'plus' | 'check' | 'left' | 'right' | 'sun' | 'c
     </>
   ),
   chart: <path d="M5 20V11M12 20V5M19 20v-6" />,
+  plate: (
+    <>
+      <circle cx="13" cy="12" r="6.5" />
+      <circle cx="13" cy="12" r="3" />
+      <path d="M4 4v6M2.5 4v3.5a1.5 1.5 0 0 0 3 0V4M4 10v10" />
+    </>
+  ),
+  minus: <path d="M5 12h14" />,
+  close: <path d="M6 6l12 12M18 6L6 18" />,
 };
 
 export type IconName = keyof typeof PATHS;

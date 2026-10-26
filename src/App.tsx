@@ -2,10 +2,13 @@ import { useEffect, useState } from 'react';
 import { BottomNav, type Route } from './components/Common';
 import { HabitForm } from './screens/HabitForm';
 import { Month } from './screens/Month';
+import { Nutrition } from './screens/Nutrition';
 import { Summary } from './screens/Summary';
 import { Today } from './screens/Today';
+import { Tracking } from './screens/Tracking';
 
-/** Rutas con # para que funcione en cualquier hosting estático: #/hoy, #/hoy/AAAA-MM-DD, #/mes, #/resumen, #/nuevo, #/editar/:id */
+/** Rutas con # para que funcione en cualquier hosting estático: #/hoy, #/hoy/AAAA-MM-DD, #/mes, #/resumen, #/nuevo, #/editar/:id,
+ *  #/nutricion, #/nutricion/AAAA-MM-DD, #/seguimiento */
 function useHash(): string {
   const [hash, setHash] = useState(() => window.location.hash);
   useEffect(() => {
@@ -25,6 +28,15 @@ export function App() {
 
   if (section === 'nuevo') return <HabitForm key="nuevo" />;
   if (section === 'editar' && param) return <HabitForm key={param} habitId={param} />;
+
+  if (section === 'nutricion' || section === 'seguimiento') {
+    return (
+      <>
+        {section === 'nutricion' ? <Nutrition key={param ?? 'hoy'} dayKey={param} /> : <Tracking />}
+        <BottomNav current="nutricion" />
+      </>
+    );
+  }
 
   const route: Route = section === 'mes' || section === 'resumen' ? section : 'hoy';
   return (

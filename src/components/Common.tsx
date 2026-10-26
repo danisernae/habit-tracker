@@ -1,6 +1,7 @@
 import { Icon } from './Icon';
 
-export function ProgressRing({ pct, size = 76, stroke = 9 }: { pct: number; size?: number; stroke?: number }) {
+/** `label` reemplaza el texto del centro (por defecto, el %). El anillo se llena hasta 100. */
+export function ProgressRing({ pct, size = 76, stroke = 9, label }: { pct: number; size?: number; stroke?: number; label?: string }) {
   const r = (size - stroke) / 2;
   const circ = 2 * Math.PI * r;
   return (
@@ -16,11 +17,11 @@ export function ProgressRing({ pct, size = 76, stroke = 9 }: { pct: number; size
           stroke="var(--accent)"
           strokeWidth={stroke}
           strokeLinecap="round"
-          strokeDasharray={`${(circ * pct) / 100} ${circ}`}
+          strokeDasharray={`${(circ * Math.min(pct, 100)) / 100} ${circ}`}
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
         />
       </svg>
-      <span className="ring-label">{pct}%</span>
+      <span className="ring-label">{label ?? `${pct}%`}</span>
     </div>
   );
 }
@@ -47,13 +48,14 @@ export function StatTile({ value, label }: { value: string; label: string }) {
   );
 }
 
-export type Route = 'hoy' | 'mes' | 'resumen';
+export type Route = 'hoy' | 'mes' | 'resumen' | 'nutricion';
 
 export function BottomNav({ current }: { current: Route }) {
-  const items: Array<{ route: Route; label: string; icon: 'sun' | 'calendar' | 'chart' }> = [
+  const items: Array<{ route: Route; label: string; icon: 'sun' | 'calendar' | 'chart' | 'plate' }> = [
     { route: 'hoy', label: 'Hoy', icon: 'sun' },
     { route: 'mes', label: 'Mes', icon: 'calendar' },
     { route: 'resumen', label: 'Resumen', icon: 'chart' },
+    { route: 'nutricion', label: 'Nutrición', icon: 'plate' },
   ];
   return (
     <nav className="bottom-nav" aria-label="Navegación">
@@ -68,6 +70,20 @@ export function BottomNav({ current }: { current: Route }) {
           {it.label}
         </a>
       ))}
+    </nav>
+  );
+}
+
+/** Pestañas de Nutrición: el día (porciones) y el seguimiento (peso, IMC, % grasa). */
+export function NutritionTabs({ current }: { current: 'dia' | 'seguimiento' }) {
+  return (
+    <nav className="tabs" aria-label="Nutrición">
+      <a href="#/nutricion" aria-current={current === 'dia' ? 'page' : undefined}>
+        Día
+      </a>
+      <a href="#/seguimiento" aria-current={current === 'seguimiento' ? 'page' : undefined}>
+        Seguimiento
+      </a>
     </nav>
   );
 }

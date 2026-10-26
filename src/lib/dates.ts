@@ -87,3 +87,8 @@ export function monthName(d: Date): string {
   const name = new Intl.DateTimeFormat('es-CO', { month: 'long' }).format(d);
   return name.charAt(0).toUpperCase() + name.slice(1);
 }
+
+/** "26 oct 2026" */
+export function shortDate(d: Date): string {
+  return new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }).format(d).replace('.', '');
+}

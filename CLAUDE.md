@@ -14,7 +14,10 @@ Publicada en Vercel desde la rama `main` (cada push a `main` se despliega solo).
 
 - Vite + React 18 + TypeScript. Sin librerías de UI ni de rutas.
 - Datos en `localStorage` (clave `habitos:v1`), solo en el dispositivo. Sin backend ni cuentas.
-- Rutas con `#`: `#/hoy`, `#/hoy/AAAA-MM-DD` (marcar un día pasado), `#/mes`, `#/resumen`, `#/nuevo`, `#/editar/:id`.
+- Rutas con `#`: `#/hoy`, `#/hoy/AAAA-MM-DD` (marcar un día pasado), `#/mes`, `#/resumen`, `#/nuevo`, `#/editar/:id`,
+  `#/nutricion`, `#/nutricion/AAAA-MM-DD` y `#/seguimiento`.
+- Nutrición se guarda aparte, en la clave `nutricion:v1` (`src/nutrition.tsx`), con la misma regla: no cambiarla sin migración.
+  El respaldo JSON lleva los hábitos y además un campo `nutricion`.
 - **No cambiar la clave `habitos:v1` ni `version: 1` sin escribir una migración**: si `load()` no reconoce los datos,
   crea los hábitos de ejemplo y borra lo que la persona tenía guardado.
 - Fuentes de Google Fonts: Bricolage Grotesque (títulos y números) y DM Sans (texto).
@@ -31,13 +34,15 @@ npm run build    # revisa tipos y genera dist/
 src/
   main.tsx, App.tsx      Entrada y rutas
   store.tsx              Estado global + guardado en localStorage (hábitos, marcas, reflexiones)
+  nutrition.tsx          Estado de nutrición (porciones por día, seguimiento de peso) en `nutricion:v1`
   styles.css             Todos los estilos y los tokens de color
   lib/palette.ts         Colores e íconos de hábito
   lib/dates.ts           Fechas locales (clave 'AAAA-MM-DD', semana de lunes a domingo, formatos en español)
-  lib/stats.ts           TODOS los cálculos: porcentajes, rachas, días perfectos, resumen del mes
+  lib/foods.ts           Grupos de alimentos, equivalencias, kcal por porción y plan por comida (1400 kcal)
+  lib/stats.ts           TODOS los cálculos: porcentajes, rachas, días perfectos, resumen del mes, calorías, IMC
   lib/types.ts           Tipos de datos
   components/            Icon (íconos de trazo), Common (anillo, flechas, tarjeta de dato, barra inferior)
-  screens/               Today, Month, Summary, HabitForm (crear y editar)
+  screens/               Today, Month, Summary, HabitForm (crear y editar), Nutrition, Tracking
 public/                  manifest.webmanifest + icon.svg (para "Agregar a inicio")
 design/                  Diseños de referencia (.dc.html, se abren en el navegador) y paleta-referencia.png
 ```
@@ -80,6 +85,11 @@ Tarjetas con radio de 22–24 px, botones de 44 px como mínimo y 20 px de marge
    y al final el ánimo y la nota. Debajo, "Tus datos": descargar y cargar un respaldo en JSON.
 4. **Nuevo / Editar hábito** (`design/NuevoHabito.dc.html`): vista previa en vivo; nombre, detalle,
    color, ícono, días y "¿Desde cuándo?" (fecha de inicio, `createdAt`). Al editar aparece también "Eliminar hábito".
+5. **Nutrición** (`#/nutricion`, sin diseño de referencia; usa los mismos tokens): pestañas Día / Seguimiento.
+   - **Día:** anillo con las kcal del día contra 1400, proteína y grasa; selector de comida (se elige solo según la hora);
+     una tarjeta por grupo con porciones de hoy / meta y lo que pide el plan en esa comida. El `+` abre las equivalencias
+     del grupo (o "Otro" escrito a mano); en agua suma un vaso directo. Debajo, "Lo que comiste" por comida, con botón para quitar.
+   - **Seguimiento:** un registro por fecha con peso, IMC y % grasa. Si se guarda la estatura, el IMC se calcula solo.
 
 ## Reglas de datos (`src/lib/stats.ts`)
 
@@ -90,6 +100,8 @@ Tarjetas con radio de 22–24 px, botones de 44 px como mínimo y 20 px de marge
 - Día perfecto = todos los hábitos programados ese día cumplidos.
 - Racha actual = días programados seguidos cumplidos; si hoy aún no se marca, la racha no se rompe.
 - Veredicto: ≥85 "¡Mes increíble!", ≥70 "¡Muy buen mes!", ≥50 "Buen avance", menos "Mes para retomar".
+- Nutrición: cada porción registrada suma las kcal/proteína/grasa de su grupo (`GROUPS` en `lib/foods.ts`).
+  Por porción: lácteos 90, proteínas 170, harinas 90, grasas 42,3, frutas 80, dulce 90; verduras y agua 0 (como en la tabla del plan).
 - La primera vez se crean 5 hábitos: tomar agua, hacer ejercicio, seguir la dieta, sin azúcar y skin care.
 
 ## Reglas para cambios
@@ -104,4 +116,4 @@ Tarjetas con radio de 22–24 px, botones de 44 px como mínimo y 20 px de marge
 - **Publicarla con un link:** subirla a Vercel o Netlify (`npm run build`, carpeta `dist/`).
 - **Sincronizar entre dispositivos:** agregar cuentas y una base de datos (por ejemplo Supabase o Firebase).
 - **Que funcione sin internet:** agregar un service worker (vite-plugin-pwa).
-- **Más funciones:** reordenar hábitos, un contador de vasos de agua y modo oscuro.
+- **Más funciones:** reordenar hábitos, modo oscuro, gráfica de peso en Seguimiento y meta de kcal editable.

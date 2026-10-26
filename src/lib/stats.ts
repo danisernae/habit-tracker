@@ -1,5 +1,6 @@
 import { addDays, isFuture, monthDays, toKey } from './dates';
-import type { AppData, Habit } from './types';
+import { FOOD_GROUPS, GROUPS, KCAL_GOAL, MEAL_PLAN, type FoodGroup, type Meal } from './foods';
+import type { AppData, BodyEntry, FoodEntry, Habit } from './types';
 
 /**
  * Todos los cálculos viven aquí; las pantallas solo los muestran.
@@ -118,3 +119,86 @@ export function verdict(pct: number): string {
 }
 
 export const MOODS = ['Difícil', 'Regular', 'Bien', 'Muy bien', 'Genial'];
+
+/* ===== Nutrición ===== */
+
+export interface DayNutrition {
+  /** Porciones por grupo en todo el día. */
+  count: Record<FoodGroup, number>;
+  kcal: number;
+  protein: number;
+  fat: number;
+  /** % de la meta de calorías (puede pasar de 100). */
+  kcalPct: number;
+  /** Grupos que aún no llegan a lo del plan. */
+  missing: FoodGroup[];
+}
+
+function emptyCount(): Record<FoodGroup, number> {
+  return Object.fromEntries(FOOD_GROUPS.map((g) => [g, 0])) as Record<FoodGroup, number>;
+}
+
+export function countByGroup(entries: FoodEntry[], meal?: Meal): Record<FoodGroup, number> {
+  const count = emptyCount();
+  for (const e of entries) if (!meal || e.meal === meal) count[e.group]++;
+  return count;
+}
+
+export function dayNutrition(entries: FoodEntry[]): DayNutrition {
+  const count = countByGroup(entries);
+  let kcal = 0, protein = 0, fat = 0;
+  for (const g of FOOD_GROUPS) {
+    kcal += count[g] * GROUPS[g].kcal;
+    protein += count[g] * GROUPS[g].protein;
+    fat += count[g] * GROUPS[g].fat;
+  }
+  return {
+    count,
+    kcal: Math.round(kcal),
+    protein: Math.round(protein),
+    fat: Math.round(fat),
+    kcalPct: Math.round((kcal / KCAL_GOAL) * 100),
+    missing: FOOD_GROUPS.filter((g) => count[g] < GROUPS[g].target),
+  };
+}
+
+/** Porciones que el plan sugiere para un grupo en una comida (0 si no lleva). */
+export function mealTarget(meal: Meal, group: FoodGroup): number {
+  return MEAL_PLAN[meal][group] ?? 0;
+}
+
+export function nutritionMessage(kcal: number): string {
+  const left = KCAL_GOAL - kcal;
+  if (kcal === 0) return 'Registra tu primera comida';
+  if (left > 300) return 'Vas bien';
+  if (left >= -100) return '¡En tu meta!';
+  return 'Te pasaste un poco';
+}
+
+/** IMC = peso (kg) / estatura (m)², con un decimal. */
+export function bmi(weightKg: number | undefined, heightCm: number | undefined): number | undefined {
+  if (!weightKg || !heightCm) return undefined;
+  const m = heightCm / 100;
+  return Math.round((weightKg / (m * m)) * 10) / 10;
+}
+
+export function bmiLabel(value: number): string {
+  if (value < 18.5) return 'Bajo peso';
+  if (value < 25) return 'Normal';
+  if (value < 30) return 'Sobrepeso';
+  return 'Obesidad';
+}
+
+/** Cambio de un campo entre el primer y el último registro que lo tienen. */
+export function bodyChange(body: BodyEntry[], field: 'weight' | 'bmi' | 'fat'): number | undefined {
+  const withValue = body.filter((b) => b[field] !== undefined);
+  if (withValue.length < 2) return undefined;
+  const diff = withValue[withValue.length - 1][field]! - withValue[0][field]!;
+  return Math.round(diff * 10) / 10;
+}
+
+/** El registro anterior a `index` que tiene ese campo, para mostrar la diferencia. */
+export function previousValue(body: BodyEntry[], index: number, field: 'weight' | 'bmi' | 'fat'): number | undefined {
+  for (let i = index - 1; i >= 0; i--) if (body[i][field] !== undefined) return body[i][field];
+  return undefined;
+}

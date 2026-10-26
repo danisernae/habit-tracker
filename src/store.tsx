@@ -41,7 +41,8 @@ export function parseData(raw: string): AppData | null {
       Array.isArray(parsed.habits) &&
       typeof parsed.checks === 'object' &&
       typeof parsed.reflections === 'object';
-    return ok ? parsed : null;
+    // Solo los campos de hábitos: un respaldo trae también `nutricion`, que se guarda aparte.
+    return ok ? { version: 1, habits: parsed.habits, checks: parsed.checks, reflections: parsed.reflections } : null;
   } catch {
     return null;
   }

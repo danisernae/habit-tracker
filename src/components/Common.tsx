@@ -74,8 +74,8 @@ export function BottomNav({ current }: { current: Route }) {
   );
 }
 
-/** Pestañas de Nutrición: el día (porciones) y el seguimiento (peso, IMC, % grasa). */
-export function NutritionTabs({ current }: { current: 'dia' | 'seguimiento' }) {
+/** Pestañas de Nutrición: el día (porciones), el seguimiento (peso, IMC, % grasa) y los ajustes del plan. */
+export function NutritionTabs({ current }: { current: 'dia' | 'seguimiento' | 'plan' }) {
   return (
     <nav className="tabs" aria-label="Nutrición">
       <a href="#/nutricion" aria-current={current === 'dia' ? 'page' : undefined}>
@@ -83,6 +83,9 @@ export function NutritionTabs({ current }: { current: 'dia' | 'seguimiento' }) {
       </a>
       <a href="#/seguimiento" aria-current={current === 'seguimiento' ? 'page' : undefined}>
         Seguimiento
+      </a>
+      <a href="#/plan" aria-current={current === 'plan' ? 'page' : undefined}>
+        Mi plan
       </a>
     </nav>
   );

@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Icon } from '../components/Icon';
 import { NutritionTabs, StatTile } from '../components/Common';
+import { WeightChart } from '../components/WeightChart';
 import { fromKey, shortDate, toKey } from '../lib/dates';
-import { bmi, bmiLabel, bodyChange, previousValue } from '../lib/stats';
+import { bmi, bmiLabel, bodyChange, previousValue, weightSeries } from '../lib/stats';
 import type { BodyEntry } from '../lib/types';
 import { useNutrition } from '../nutrition';
 
@@ -86,6 +87,8 @@ export function Tracking() {
       {weightChange !== undefined && (
         <p className="muted small">Cambios desde tu primer registro.</p>
       )}
+
+      <WeightChart points={weightSeries(body)} />
 
       <section className="card form-card stack-10" aria-labelledby="body-form">
         <h2 id="body-form">{existing ? 'Editar registro' : 'Nuevo registro'}</h2>

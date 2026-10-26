@@ -1,6 +1,6 @@
 import { addDays, fromKey, isFuture, monthDays, toKey } from './dates';
 import { FOOD_GROUPS, MEALS, type FoodGroup, type Meal, type NutritionSettings } from './foods';
-import type { AppData, BodyEntry, FoodEntry, Habit, Portions } from './types';
+import type { AppData, BodyEntry, EntryBase, FoodEntry, Habit, Portions } from './types';
 
 /**
  * Todos los cálculos viven aquí; las pantallas solo los muestran.
@@ -151,6 +151,11 @@ function entryValues(e: FoodEntry, values: NutritionSettings['values']): { kcal:
     fat += n * values[g].fat;
   }
   return { kcal: e.kcal ?? kcal, protein: e.protein ?? protein, fat: e.fat ?? fat };
+}
+
+/** Porciones según lo que se comió: 100 g de arroz con base 80 g = 1 porción → 1,25 porciones. */
+export function scaledPortions(base: EntryBase, qty: number): number {
+  return Math.round(((base.portions * qty) / base.qty) * 100) / 100;
 }
 
 export function entryKcal(e: FoodEntry, settings: NutritionSettings): number {

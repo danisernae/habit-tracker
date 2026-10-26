@@ -192,9 +192,9 @@ export function mealForHour(hour: number): Meal {
   return 'cena';
 }
 
-/** 1,5 → "1,5"; 2 → "2" */
+/** 1,25 → "1,25"; 2 → "2" (máx. 2 decimales) */
 export function fmtNum(n: number): string {
-  return String(Math.round(n * 10) / 10).replace('.', ',');
+  return String(Math.round(n * 100) / 100).replace('.', ',');
 }
 
 export function unitLabel(group: FoodGroup, n: number): string {
@@ -206,6 +206,20 @@ export function unitLabel(group: FoodGroup, n: number): string {
 export function portionsLabel(group: FoodGroup, n: number): string {
   const [one, many] = GROUPS[group].short;
   return `${fmtNum(n)} ${n === 1 ? one : many}`;
+}
+
+const FRACTIONS: Record<string, number> = { '½': 0.5, '¼': 0.25, '¾': 0.75 };
+
+/**
+ * Separa la cantidad de una equivalencia para poder ajustarla: "80 g" → 80 "g", "2 tajadas" → 2 "tajadas",
+ * "1 ¼ taza" → 1,25 "taza", "30 g en crudo" → 30 "g en crudo". Devuelve null si no empieza con un número.
+ */
+export function parseAmount(amount: string): { qty: number; unit: string } | null {
+  const m = amount.trim().match(/^(\d+(?:[.,]\d+)?)?\s*([½¼¾])?\s*(.*)$/);
+  if (!m || (!m[1] && !m[2])) return null;
+  const qty = (m[1] ? Number(m[1].replace(',', '.')) : 0) + (m[2] ? FRACTIONS[m[2]] : 0);
+  // Lo que va entre paréntesis es una ayuda ("30 g (3 cucharadas)") y no aplica a otra cantidad.
+  return qty > 0 ? { qty, unit: m[3].replace(/\s*\(.*\)/, '').trim() } : null;
 }
 
 /** Texto que queda guardado en el registro: "Arroz cocido (80 g)". */

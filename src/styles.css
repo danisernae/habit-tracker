@@ -414,3 +414,9 @@ input[type='date'].input { -webkit-appearance: none; appearance: none; display: 
 .chart-line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .chart-dot { fill: var(--accent); stroke: var(--surface); stroke-width: 2; }
 .chart-hair { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
+
+.eaten-edit { padding: 4px 0; border: 0; background: transparent; text-align: left; color: inherit; }
+.qty-row { justify-content: center; }
+.qty-input { width: 110px; text-align: center; font-family: var(--font-display); font-weight: 800; font-size: 24px; }
+.qty-unit { max-width: 110px; }
+.qty-result { font-family: var(--font-display); font-weight: 800; font-size: 20px; text-align: center; }

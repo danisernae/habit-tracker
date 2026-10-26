@@ -95,8 +95,9 @@ Tarjetas con radio de 22–24 px, botones de 44 px como mínimo y 20 px de marge
    - **Día:** anillo con las kcal del día contra la meta, proteína y grasa; selector de comida (se elige solo según la hora);
      "Calcular con IA" (escribe el alimento → kcal y porciones; guarda los últimos 12 para reusarlos);
      una tarjeta por grupo con porciones de hoy / meta y lo que pide el plan en esa comida. El `+` abre las equivalencias
-     del grupo (o "Otro" escrito a mano); en agua suma un vaso directo. Debajo, "Lo que comiste" por comida: cada registro
-     se puede pasar a otra comida (selector) o quitar.
+     del grupo (o "Otro" escrito a mano); al elegir una se pregunta "¿Cuánto comiste?" con la cantidad de la equivalencia
+     (100 g de arroz con base 80 g = 1,25 harinas). En agua suma un vaso directo. Debajo, "Lo que comiste" por comida: cada
+     registro se puede ajustar (cantidad), pasar a otra comida (selector) o quitar. Lo calculado con IA no se ajusta: se recalcula.
    - **Seguimiento:** gráfica de peso vs. fecha y un registro por fecha con peso, IMC y % grasa. Con la estatura, el IMC se calcula solo.
    - **Mi plan:** meta de kcal, porciones por comida (el total del día es la suma), equivalencias por grupo (formato
      "Alimento · cantidad", pueden valer más de 1 porción), lo que aporta 1 porción y el código de la IA.
@@ -110,7 +111,7 @@ Tarjetas con radio de 22–24 px, botones de 44 px como mínimo y 20 px de marge
 - Día perfecto = todos los hábitos programados ese día cumplidos.
 - Racha actual = días programados seguidos cumplidos; si hoy aún no se marca, la racha no se rompe.
 - Veredicto: ≥85 "¡Mes increíble!", ≥70 "¡Muy buen mes!", ≥50 "Buen avance", menos "Mes para retomar".
-- Nutrición: un registro cuenta `portions` (1 por defecto) de su grupo, o `split` si vino de la IA; suma las kcal/proteína/grasa
+- Nutrición: un registro cuenta `portions` (1 por defecto) de su grupo (si trae `base`, `portions` = base.portions × qty / base.qty), o `split` si vino de la IA; suma las kcal/proteína/grasa
   de "Mi plan" (`settings.values`), salvo que el registro traiga las suyas (IA). Valores de fábrica por porción: lácteos 90,
   proteínas 170, harinas 90, grasas 42,3, frutas 80, dulce 90; verduras y agua 0. `settings` guarda solo lo que se cambió.
 - La primera vez se crean 5 hábitos: tomar agua, hacer ejercicio, seguir la dieta, sin azúcar y skin care.

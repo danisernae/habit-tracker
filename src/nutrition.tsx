@@ -38,6 +38,7 @@ interface NutritionStore {
   settings: NutritionSettings;
   addFood: (day: DateKey, entry: Omit<FoodEntry, 'id'>) => void;
   removeFood: (day: DateKey, entryId: string) => void;
+  updateFood: (day: DateKey, entryId: string, patch: Partial<Omit<FoodEntry, 'id'>>) => void;
   /** Pasa un registro a otra comida (de desayuno a almuerzo, por ejemplo). */
   moveFood: (day: DateKey, entryId: string, meal: Meal) => void;
   saveSettings: (patch: Partial<NutritionSettings>) => void;
@@ -71,6 +72,12 @@ export function NutritionProvider({ children }: { children: ReactNode }) {
         setNutrition((d) => ({
           ...d,
           days: { ...d.days, [day]: [...(d.days[day] ?? []), { ...entry, id: newId() }] },
+        }));
+      },
+      updateFood(day, entryId, patch) {
+        setNutrition((d) => ({
+          ...d,
+          days: { ...d.days, [day]: (d.days[day] ?? []).map((e) => (e.id === entryId ? { ...e, ...patch } : e)) },
         }));
       },
       moveFood(day, entryId, meal) {

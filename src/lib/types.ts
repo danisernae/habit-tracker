@@ -37,6 +37,14 @@ export type Portions = Partial<Record<FoodGroup, number>>;
  * Algo que se comió, en una comida. Normalmente es una equivalencia: cuenta `portions` (1 si no está) de `group`.
  * Lo que se calculó con IA trae además `split` (porciones de varios grupos) y sus propias kcal/proteína/grasa.
  */
+/** La equivalencia de la que salió un registro, para poder ajustar cuánto se comió: 80 g de arroz = 1 porción. */
+export interface EntryBase {
+  food: string;
+  qty: number;
+  unit: string;
+  portions: number;
+}
+
 export interface FoodEntry {
   id: string;
   /** El grupo principal (da el color). */
@@ -45,6 +53,9 @@ export interface FoodEntry {
   food: string;
   meal: Meal;
   portions?: number;
+  /** Si está, `qty` es lo que se comió en la unidad de `base` y `portions` sale de ahí. */
+  base?: EntryBase;
+  qty?: number;
   split?: Portions;
   kcal?: number;
   protein?: number;

@@ -11,14 +11,25 @@ import {
   MEAL_LABELS,
   MEALS,
   mealForHour,
+  parseAmount,
   portionsLabel,
   unitLabel,
+  type Equivalent,
   type FoodGroup,
   type Meal,
 } from '../lib/foods';
 import { INK } from '../lib/palette';
-import { countByGroup, dailyTarget, dayNutrition, entryKcal, entryPortions, mainGroup, nutritionMessage } from '../lib/stats';
-import type { AiFood, FoodEntry, Portions } from '../lib/types';
+import {
+  countByGroup,
+  dailyTarget,
+  dayNutrition,
+  entryKcal,
+  entryPortions,
+  mainGroup,
+  nutritionMessage,
+  scaledPortions,
+} from '../lib/stats';
+import type { AiFood, EntryBase, FoodEntry, Portions } from '../lib/types';
 import { useNutrition } from '../nutrition';
 
 const groupStyle = (g: FoodGroup) =>
@@ -30,9 +41,17 @@ const splitText = (split: Portions) =>
     .map((g) => portionsLabel(g, split[g]!))
     .join(' · ');
 
+/** Base para ajustar la cantidad de una equivalencia; null si su cantidad no empieza con un número. */
+function baseOf(e: Equivalent): EntryBase | null {
+  const parsed = parseAmount(e.amount);
+  return parsed ? { food: e.food, qty: parsed.qty, unit: parsed.unit, portions: e.portions ?? 1 } : null;
+}
+
+const baseText = (b: EntryBase, qty: number) => `${b.food} (${fmtNum(qty)}${b.unit ? ` ${b.unit}` : ''})`;
+
 /** Lo que se come en un día: hoy (#/nutricion) o un día pasado (#/nutricion/AAAA-MM-DD). */
 export function Nutrition({ dayKey }: { dayKey?: string }) {
-  const { nutrition, settings, addFood, removeFood, moveFood } = useNutrition();
+  const { nutrition, settings, addFood, removeFood, moveFood, updateFood } = useNutrition();
   const today = new Date();
   const parsed = parseKey(dayKey);
   const day = parsed && !isFuture(parsed, today) ? parsed : today;
@@ -44,6 +63,8 @@ export function Nutrition({ dayKey }: { dayKey?: string }) {
   const mealCount = countByGroup(entries, meal);
   const [picking, setPicking] = useState<FoodGroup | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);
+  const [editing, setEditing] = useState<FoodEntry | null>(null);
+  const editDialog = useRef<HTMLDialogElement>(null);
   const left = settings.kcalGoal - totals.kcal;
 
   const dayHref = (d: Date) => (sameDay(d, today) ? '#/nutricion' : `#/nutricion/${toKey(d)}`);
@@ -57,9 +78,31 @@ export function Nutrition({ dayKey }: { dayKey?: string }) {
     dialog.current?.showModal();
   }
 
-  function pick(food: string, portions?: number) {
-    if (picking) addFood(key, { group: picking, food, meal, ...(portions && portions !== 1 ? { portions } : {}) });
+  /** Una equivalencia con la cantidad que se comió, o algo escrito a mano (1 porción). */
+  function pick(choice: { base: EntryBase; qty: number } | { food: string; portions: number }) {
+    if (picking) {
+      const entry =
+        'base' in choice
+          ? { food: baseText(choice.base, choice.qty), base: choice.base, qty: choice.qty, portions: scaledPortions(choice.base, choice.qty) }
+          : { food: choice.food, ...(choice.portions !== 1 ? { portions: choice.portions } : {}) };
+      addFood(key, { group: picking, meal, ...entry });
+    }
     dialog.current?.close();
+  }
+
+  function openEdit(e: FoodEntry) {
+    setEditing(e);
+    editDialog.current?.showModal();
+  }
+
+  function saveEdit(qty: number) {
+    if (!editing) return;
+    if (editing.base) {
+      updateFood(key, editing.id, { qty, food: baseText(editing.base, qty), portions: scaledPortions(editing.base, qty) });
+    } else {
+      updateFood(key, editing.id, { portions: qty });
+    }
+    editDialog.current?.close();
   }
 
   function addAi(f: AiFood) {
@@ -174,10 +217,25 @@ export function Nutrition({ dayKey }: { dayKey?: string }) {
         kcalOf={(e) => entryKcal(e, settings)}
         onRemove={(id) => removeFood(key, id)}
         onMove={(id, m) => moveFood(key, id, m)}
+        onEdit={openEdit}
       />
 
       <dialog ref={dialog} className="sheet" onClose={() => setPicking(null)} aria-labelledby="sheet-title">
         {picking && <FoodPicker group={picking} meal={meal} onPick={pick} onClose={() => dialog.current?.close()} />}
+      </dialog>
+
+      <dialog ref={editDialog} className="sheet" onClose={() => setEditing(null)} aria-labelledby="qty-title">
+        {editing && (
+          <QuantityForm
+            group={editing.group}
+            base={editing.base ?? { food: editing.food, qty: 1, unit: 'porciones', portions: 1 }}
+            initialQty={editing.base ? (editing.qty ?? editing.base.qty) : (editing.portions ?? 1)}
+            eyebrow={`${MEAL_LABELS[editing.meal]} · ajustar cantidad`}
+            submitLabel="Guardar"
+            onSubmit={saveEdit}
+            onBack={() => editDialog.current?.close()}
+          />
+        )}
       </dialog>
     </main>
   );
@@ -307,12 +365,28 @@ function FoodPicker({
 }: {
   group: FoodGroup;
   meal: Meal;
-  onPick: (food: string, portions?: number) => void;
+  onPick: (choice: { base: EntryBase; qty: number } | { food: string; portions: number }) => void;
   onClose: () => void;
 }) {
   const { settings } = useNutrition();
   const info = GROUPS[group];
   const [other, setOther] = useState('');
+  const [chosen, setChosen] = useState<EntryBase | null>(null);
+
+  if (chosen) {
+    return (
+      <QuantityForm
+        group={group}
+        base={chosen}
+        initialQty={chosen.qty}
+        eyebrow={`${MEAL_LABELS[meal]} · ${info.label}`}
+        submitLabel="Agregar"
+        onSubmit={(qty) => onPick({ base: chosen, qty })}
+        onBack={() => setChosen(null)}
+      />
+    );
+  }
+
   return (
     <div className="stack-10">
       <div className="row gap-10">
@@ -332,7 +406,11 @@ function FoodPicker({
             type="button"
             className="equiv-btn"
             style={groupStyle(group)}
-            onClick={() => onPick(equivalentText(e), e.portions)}
+            onClick={() => {
+              const base = baseOf(e);
+              if (base) setChosen(base);
+              else onPick({ food: equivalentText(e), portions: e.portions ?? 1 });
+            }}
           >
             <span className="swatch" style={{ background: 'var(--c)' }} />
             <span className="grow">{e.food}</span>
@@ -347,7 +425,7 @@ function FoodPicker({
         className="row gap-6"
         onSubmit={(e) => {
           e.preventDefault();
-          if (other.trim()) onPick(other.trim());
+          if (other.trim()) onPick({ food: other.trim(), portions: 1 });
         }}
       >
         <input
@@ -368,17 +446,101 @@ function FoodPicker({
   );
 }
 
+/** "¿Cuánto comiste?": la cantidad en la unidad de la equivalencia, con las porciones y kcal al momento. */
+function QuantityForm({
+  group,
+  base,
+  initialQty,
+  eyebrow,
+  submitLabel,
+  onSubmit,
+  onBack,
+}: {
+  group: FoodGroup;
+  base: EntryBase;
+  initialQty: number;
+  eyebrow: string;
+  submitLabel: string;
+  onSubmit: (qty: number) => void;
+  onBack: () => void;
+}) {
+  const { settings } = useNutrition();
+  const [text, setText] = useState(fmtNum(initialQty));
+  const n = Number(text.replace(',', '.'));
+  const valid = text.trim() !== '' && Number.isFinite(n) && n > 0 && n <= 5000;
+  const portions = valid ? scaledPortions(base, n) : 0;
+  const kcal = Math.round(portions * settings.values[group].kcal);
+  const step = base.qty >= 20 ? 10 : 0.5;
+
+  return (
+    <form
+      className="stack-10"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (valid) onSubmit(n);
+      }}
+    >
+      <div className="row gap-10">
+        <button type="button" className="round-btn" aria-label="Volver" onClick={onBack}>
+          <Icon name="left" size={18} strokeWidth={2.4} />
+        </button>
+        <div className="grow">
+          <p className="eyebrow">{eyebrow}</p>
+          <h2 id="qty-title">{base.food}</h2>
+        </div>
+      </div>
+      <p className="muted small">
+        {base.unit === 'porciones'
+          ? '¿Cuántas porciones comiste?'
+          : `1 porción = ${fmtNum(base.qty / base.portions)} ${base.unit}. ¿Cuánto comiste?`}
+      </p>
+      <div className="row gap-10 qty-row">
+        <button type="button" className="round-btn" aria-label="Menos" onClick={() => valid && n - step > 0 && setText(fmtNum(n - step))}>
+          <Icon name="minus" size={18} strokeWidth={2.4} />
+        </button>
+        <input
+          className="input qty-input"
+          inputMode="decimal"
+          aria-label={`Cantidad en ${base.unit}`}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onFocus={(e) => e.target.select()}
+        />
+        <span className="bold qty-unit">{base.unit}</span>
+        <button type="button" className="round-btn" aria-label="Más" onClick={() => valid && setText(fmtNum(n + step))}>
+          <Icon name="plus" size={18} strokeWidth={2.4} />
+        </button>
+      </div>
+      <p className="qty-result" aria-live="polite">
+        {valid ? (
+          <>
+            = {portionsLabel(group, portions)}
+            {settings.values[group].kcal > 0 && <span className="muted"> · {kcal} kcal</span>}
+          </>
+        ) : (
+          <span className="muted">Escribe una cantidad.</span>
+        )}
+      </p>
+      <button type="submit" className="primary-btn" disabled={!valid}>
+        {submitLabel}
+      </button>
+    </form>
+  );
+}
+
 /** Lo que se registró en el día, agrupado por comida. Cada registro se puede pasar a otra comida o quitar. */
 function EatenList({
   entries,
   kcalOf,
   onRemove,
   onMove,
+  onEdit,
 }: {
   entries: FoodEntry[];
   kcalOf: (e: FoodEntry) => number;
   onRemove: (id: string) => void;
   onMove: (id: string, meal: Meal) => void;
+  onEdit: (e: FoodEntry) => void;
 }) {
   const shown = (e: FoodEntry) => e.group !== 'agua' || !!e.split;
   const meals = MEALS.filter((m) => entries.some((e) => e.meal === m && shown(e)));
@@ -399,12 +561,22 @@ function EatenList({
                 .map((e) => (
                   <li key={e.id} className="eaten-row">
                     <span className="swatch" style={{ background: GROUPS[e.group].hex }} />
-                    <span className="grow stack-4 eaten-text">
-                      <span>{e.food}</span>
-                      <span className="muted xsmall">
-                        {splitText(entryPortions(e))} · {kcalOf(e)} kcal
+                    {e.split ? (
+                      // Lo calculado con IA trae sus propias kcal: para otra cantidad, se vuelve a calcular.
+                      <span className="grow stack-4 eaten-text">
+                        <span>{e.food}</span>
+                        <span className="muted xsmall">
+                          {splitText(entryPortions(e))} · {kcalOf(e)} kcal
+                        </span>
                       </span>
-                    </span>
+                    ) : (
+                      <button type="button" className="grow stack-4 eaten-text eaten-edit" aria-label={`Ajustar cantidad: ${e.food}`} onClick={() => onEdit(e)}>
+                        <span>{e.food}</span>
+                        <span className="muted xsmall">
+                          {splitText(entryPortions(e))} · {kcalOf(e)} kcal · <span className="link">ajustar</span>
+                        </span>
+                      </button>
+                    )}
                     <select
                       className="meal-select"
                       aria-label={`Cambiar de comida: ${e.food}`}

@@ -283,7 +283,7 @@ input[type='date'].input { -webkit-appearance: none; appearance: none; display: 
 
 /* ===== Nutrición ===== */
 .tabs {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px;
   background: var(--track); border-radius: 22px;
 }
 .tabs a {
@@ -361,3 +361,62 @@ input[type='date'].input { -webkit-appearance: none; appearance: none; display: 
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
+
+/* ===== Nutrición: IA, plan y gráfica ===== */
+.ai-card { padding: 16px; }
+.ai-title { display: flex; align-items: center; gap: 8px; font-size: 18px; }
+.ai-title svg { color: var(--accent); }
+.ai-result { background: var(--bg); border-radius: 18px; padding: 14px; }
+.ai-kcal { font-family: var(--font-display); font-weight: 800; font-size: 20px; }
+.error-text { color: var(--accent); font-weight: 700; }
+.primary-btn.compact { height: 48px; margin-top: 0; font-size: 14px; border-radius: 24px; }
+
+.equiv-amount { color: var(--muted); font-size: 13px; text-align: right; flex-shrink: 0; max-width: 45%; }
+.equiv-portions { color: var(--ink); font-weight: 700; }
+
+.eaten-row { display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 6px 0; }
+.eaten-text { min-width: 0; }
+.meal-select {
+  height: 36px; max-width: 118px; flex-shrink: 0; padding: 0 26px 0 10px; border-radius: 18px;
+  font: inherit; font-size: 12px; font-weight: 700; color: var(--ink);
+  background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237A5A66' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 9px center;
+  border: 1.5px solid var(--border); -webkit-appearance: none; appearance: none;
+}
+
+.goal-input { max-width: 140px; font-family: var(--font-display); font-weight: 800; font-size: 22px; }
+.plan-list { list-style: none; margin: 0; }
+.plan-list li { min-height: 60px; }
+.plan-list li + li { border-top: 1.5px solid var(--track); }
+.stepper { display: flex; align-items: center; gap: 6px; }
+.stepper .round-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.stepper-value { width: 24px; text-align: center; font-family: var(--font-display); font-weight: 800; font-size: 18px; }
+
+.details-card { padding: 0 16px; }
+.details-card summary {
+  display: flex; align-items: center; gap: 10px; min-height: 56px; cursor: pointer; list-style: none;
+}
+.details-card summary::-webkit-details-marker { display: none; }
+.details-card[open] summary { border-bottom: 1.5px solid var(--track); }
+.details-body { padding: 8px 0 12px; }
+.values-grid {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;
+  padding: 12px 0 16px; border-top: 1.5px solid var(--track);
+}
+.values-title { grid-column: 1 / -1; }
+.small-input { min-height: 44px; padding: 8px 12px; font-size: 15px; }
+
+.chart-card { margin: 0; padding: 14px 12px 8px; }
+.chart-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 0 4px 6px; }
+.chart-value { color: var(--ink); font-weight: 700; }
+.chart { display: block; width: 100%; height: auto; touch-action: pan-y; }
+.chart-grid { stroke: var(--track); stroke-width: 1; }
+.chart-axis { fill: var(--muted); font-size: 11px; font-family: var(--font-body); }
+.chart-line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.chart-dot { fill: var(--accent); stroke: var(--surface); stroke-width: 2; }
+.chart-hair { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
+
+.eaten-edit { padding: 4px 0; border: 0; background: transparent; text-align: left; color: inherit; }
+.qty-row { justify-content: center; }
+.qty-input { width: 110px; text-align: center; font-family: var(--font-display); font-weight: 800; font-size: 24px; }
+.qty-unit { max-width: 110px; }
+.qty-result { font-family: var(--font-display); font-weight: 800; font-size: 20px; text-align: center; }

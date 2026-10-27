@@ -1,6 +1,6 @@
-import { addDays, isFuture, monthDays, toKey } from './dates';
-import { FOOD_GROUPS, GROUPS, KCAL_GOAL, MEAL_PLAN, type FoodGroup, type Meal } from './foods';
-import type { AppData, BodyEntry, FoodEntry, Habit } from './types';
+import { addDays, fromKey, isFuture, monthDays, toKey } from './dates';
+import { FOOD_GROUPS, MEALS, type FoodGroup, type Meal, type NutritionSettings } from './foods';
+import type { AppData, BodyEntry, EntryBase, FoodEntry, Habit, Portions } from './types';
 
 /**
  * Todos los cálculos viven aquí; las pantallas solo los muestran.
@@ -123,56 +123,103 @@ export const MOODS = ['Difícil', 'Regular', 'Bien', 'Muy bien', 'Genial'];
 /* ===== Nutrición ===== */
 
 export interface DayNutrition {
-  /** Porciones por grupo en todo el día. */
+  /** Porciones por grupo en todo el día (pueden tener decimales, p. ej. 1,5 por algo calculado con IA). */
   count: Record<FoodGroup, number>;
   kcal: number;
   protein: number;
   fat: number;
   /** % de la meta de calorías (puede pasar de 100). */
   kcalPct: number;
-  /** Grupos que aún no llegan a lo del plan. */
-  missing: FoodGroup[];
 }
 
 function emptyCount(): Record<FoodGroup, number> {
   return Object.fromEntries(FOOD_GROUPS.map((g) => [g, 0])) as Record<FoodGroup, number>;
 }
 
+/** Porciones por grupo de un registro. */
+export function entryPortions(e: FoodEntry): Portions {
+  return e.split ?? { [e.group]: e.portions ?? 1 };
+}
+
+function entryValues(e: FoodEntry, values: NutritionSettings['values']): { kcal: number; protein: number; fat: number } {
+  const split = entryPortions(e);
+  let kcal = 0, protein = 0, fat = 0;
+  for (const g of FOOD_GROUPS) {
+    const n = split[g] ?? 0;
+    kcal += n * values[g].kcal;
+    protein += n * values[g].protein;
+    fat += n * values[g].fat;
+  }
+  return { kcal: e.kcal ?? kcal, protein: e.protein ?? protein, fat: e.fat ?? fat };
+}
+
+/** Porciones según lo que se comió: 100 g de arroz con base 80 g = 1 porción → 1,25 porciones. */
+export function scaledPortions(base: EntryBase, qty: number): number {
+  return Math.round(((base.portions * qty) / base.qty) * 100) / 100;
+}
+
+export function entryKcal(e: FoodEntry, settings: NutritionSettings): number {
+  return Math.round(entryValues(e, settings.values).kcal);
+}
+
 export function countByGroup(entries: FoodEntry[], meal?: Meal): Record<FoodGroup, number> {
   const count = emptyCount();
-  for (const e of entries) if (!meal || e.meal === meal) count[e.group]++;
+  for (const e of entries) {
+    if (meal && e.meal !== meal) continue;
+    const split = entryPortions(e);
+    for (const g of FOOD_GROUPS) count[g] += split[g] ?? 0;
+  }
   return count;
 }
 
-export function dayNutrition(entries: FoodEntry[]): DayNutrition {
-  const count = countByGroup(entries);
+export function dayNutrition(entries: FoodEntry[], settings: NutritionSettings): DayNutrition {
   let kcal = 0, protein = 0, fat = 0;
-  for (const g of FOOD_GROUPS) {
-    kcal += count[g] * GROUPS[g].kcal;
-    protein += count[g] * GROUPS[g].protein;
-    fat += count[g] * GROUPS[g].fat;
+  for (const e of entries) {
+    const v = entryValues(e, settings.values);
+    kcal += v.kcal;
+    protein += v.protein;
+    fat += v.fat;
   }
   return {
-    count,
+    count: countByGroup(entries),
     kcal: Math.round(kcal),
     protein: Math.round(protein),
     fat: Math.round(fat),
-    kcalPct: Math.round((kcal / KCAL_GOAL) * 100),
-    missing: FOOD_GROUPS.filter((g) => count[g] < GROUPS[g].target),
+    kcalPct: settings.kcalGoal > 0 ? Math.round((kcal / settings.kcalGoal) * 100) : 0,
   };
 }
 
-/** Porciones que el plan sugiere para un grupo en una comida (0 si no lleva). */
-export function mealTarget(meal: Meal, group: FoodGroup): number {
-  return MEAL_PLAN[meal][group] ?? 0;
+/** Porciones al día de un grupo según el plan: la suma de todas las comidas. */
+export function dailyTarget(settings: NutritionSettings, group: FoodGroup): number {
+  return MEALS.reduce((sum, m) => sum + settings.plan[m][group], 0);
 }
 
-export function nutritionMessage(kcal: number): string {
-  const left = KCAL_GOAL - kcal;
+/** Calorías que suma el plan completo de un día. */
+export function planKcal(settings: NutritionSettings): number {
+  return Math.round(FOOD_GROUPS.reduce((sum, g) => sum + dailyTarget(settings, g) * settings.values[g].kcal, 0));
+}
+
+export function nutritionMessage(kcal: number, goal: number): string {
+  const left = goal - kcal;
   if (kcal === 0) return 'Registra tu primera comida';
   if (left > 300) return 'Vas bien';
   if (left >= -100) return '¡En tu meta!';
   return 'Te pasaste un poco';
+}
+
+/** El grupo con más porciones (da el color a un alimento calculado con IA). */
+export function mainGroup(split: Portions): FoodGroup {
+  let best: FoodGroup = 'harinas';
+  for (const g of FOOD_GROUPS) if ((split[g] ?? 0) > (split[best] ?? 0)) best = g;
+  return best;
+}
+
+/** Puntos del peso para la gráfica: x en días desde el primer registro. */
+export function weightSeries(body: BodyEntry[]): Array<{ date: string; day: number; kg: number }> {
+  const points = body.filter((b) => b.weight !== undefined);
+  if (points.length === 0) return [];
+  const first = fromKey(points[0].date).getTime();
+  return points.map((b) => ({ date: b.date, day: Math.round((fromKey(b.date).getTime() - first) / 86_400_000), kg: b.weight! }));
 }
 
 /** IMC = peso (kg) / estatura (m)², con un decimal. */

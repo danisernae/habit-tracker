@@ -1,6 +1,6 @@
 import type { DateKey } from './dates';
 import type { HabitColor, HabitIcon } from './palette';
-import type { FoodGroup, Meal } from './foods';
+import type { FoodGroup, Meal, NutritionSettings } from './foods';
 
 export interface Habit {
   id: string;
@@ -31,13 +31,46 @@ export interface AppData {
   reflections: Record<string, Reflection>;
 }
 
-/** Una porción que se comió: una equivalencia de un grupo (o algo escrito a mano) en una comida. */
+export type Portions = Partial<Record<FoodGroup, number>>;
+
+/**
+ * Algo que se comió, en una comida. Normalmente es una equivalencia: cuenta `portions` (1 si no está) de `group`.
+ * Lo que se calculó con IA trae además `split` (porciones de varios grupos) y sus propias kcal/proteína/grasa.
+ */
+/** La equivalencia de la que salió un registro, para poder ajustar cuánto se comió: 80 g de arroz = 1 porción. */
+export interface EntryBase {
+  food: string;
+  qty: number;
+  unit: string;
+  portions: number;
+}
+
 export interface FoodEntry {
   id: string;
+  /** El grupo principal (da el color). */
   group: FoodGroup;
-  /** "80 g de arroz", "1 vaso de agua"… */
+  /** "Arroz cocido (80 g)", "Agua (1 vaso)"… */
   food: string;
   meal: Meal;
+  portions?: number;
+  /** Si está, `qty` es lo que se comió en la unidad de `base` y `portions` sale de ahí. */
+  base?: EntryBase;
+  qty?: number;
+  split?: Portions;
+  kcal?: number;
+  protein?: number;
+  fat?: number;
+}
+
+/** Un alimento que ya se calculó con IA, para volver a agregarlo sin consultar de nuevo. */
+export interface AiFood {
+  name: string;
+  kcal: number;
+  protein: number;
+  fat: number;
+  carbs: number;
+  split: Portions;
+  source: string;
 }
 
 /** Un registro de seguimiento. Los campos que no se midieron quedan vacíos. */
@@ -56,4 +89,8 @@ export interface NutritionData {
   body: BodyEntry[];
   /** Estatura en cm, para calcular el IMC. */
   heightCm?: number;
+  /** Cambios a los valores de fábrica de "Mi plan" (lib/foods.ts). Si no está, se usan los de fábrica. */
+  settings?: Partial<NutritionSettings>;
+  /** Lo último que se calculó con IA (máx. 12, el más reciente primero). */
+  aiFoods?: AiFood[];
 }
